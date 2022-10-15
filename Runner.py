@@ -2,13 +2,13 @@ import pygame
 import sys
 import time
 
-import tictactoe as ttt
+import TicTactoe as ttt
 
 pygame.init()
 size = width, height = 600, 400
 
 # Colors
-black = (0, 0, 0)
+red = (255, 0, 0)
 white = (255, 255, 255)
 
 screen = pygame.display.set_mode(size)
@@ -27,7 +27,7 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
 
-    screen.fill(black)
+    screen.fill(red)
 
     # Let user choose a player.
     if user is None:
@@ -40,14 +40,14 @@ while True:
 
         # Draw buttons
         playXButton = pygame.Rect((width / 8), (height / 2), width / 4, 50)
-        playX = mediumFont.render("Play as X", True, black)
+        playX = mediumFont.render("Play as X", True, red)
         playXRect = playX.get_rect()
         playXRect.center = playXButton.center
         pygame.draw.rect(screen, white, playXButton)
         screen.blit(playX, playXRect)
 
         playOButton = pygame.Rect(5 * (width / 8), (height / 2), width / 4, 50)
-        playO = mediumFont.render("Play as O", True, black)
+        playO = mediumFont.render("Play as O", True, red)
         playORect = playO.get_rect()
         playORect.center = playOButton.center
         pygame.draw.rect(screen, white, playOButton)
@@ -129,7 +129,7 @@ while True:
 
         if game_over:
             againButton = pygame.Rect(width / 3, height - 65, width / 3, 50)
-            again = mediumFont.render("Play Again", True, black)
+            again = mediumFont.render("Play Again", True, red)
             againRect = again.get_rect()
             againRect.center = againButton.center
             pygame.draw.rect(screen, white, againButton)
@@ -144,4 +144,4 @@ while True:
                     ai_turn = False
 
     pygame.display.flip()
-    
+
