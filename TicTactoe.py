@@ -1,286 +1,185 @@
+"""
+Tic Tac Toe Player
+"""
+
+import math
 import copy
-import sys
-import pygame
-import random
-import numpy as np
 
-from Runner import *
+X = "X"
+O = "O"
+EMPTY = None
 
 
-pygame.init()
-screen = pygame.display.set_mode( (WIDTH, HEIGHT) )
-pygame.display.set_caption('TIC TAC TOE AI')
-screen.fill( BG_COLOR )
+def initial_state():
+    """
+    Returns starting state of the board.
+    """
+    return [[EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY],
+            [EMPTY, EMPTY, EMPTY]]
 
 
-class Board:
+def player(board):
+    """
+    Returns player who has the next turn on a board.
+    """
+    qtdx = 0
+    qtdo = 0
 
-    def __init__(self):
-        self.squares = np.zeros( (ROWS, COLS) )
-        self.empty_sqrs = self.squares # [squares]
-        self.marked_sqrs = 0
+    # contando qtos X e qtos O tem no tabuleiro para saber quem irá jogar
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == X:
+                qtdx += 1
+            if board[i][j] == O:
+                qtdo += 1
 
-    def final_state(self, show=False):
-        '''
-            @return 0 if there is no win yet
-            @return 1 if player 1 wins
-            @return 2 if player 2 wins
-        '''
-
-        for col in range(COLS):
-            if self.squares[0][col] == self.squares[1][col] == self.squares[2][col] != 0:
-                if show:
-                    color = CIRC_COLOR if self.squares[0][col] == 2 else CROSS_COLOR
-                    iPos = (col * SQSIZE + SQSIZE // 2, 20)
-                    fPos = (col * SQSIZE + SQSIZE // 2, HEIGHT - 20)
-                    pygame.draw.line(screen, color, iPos, fPos, LINE_WIDTH)
-                return self.squares[0][col]
-
-        for row in range(ROWS):
-            if self.squares[row][0] == self.squares[row][1] == self.squares[row][2] != 0:
-                if show:
-                    color = CIRC_COLOR if self.squares[row][0] == 2 else CROSS_COLOR
-                    iPos = (20, row * SQSIZE + SQSIZE // 2)
-                    fPos = (WIDTH - 20, row * SQSIZE + SQSIZE // 2)
-                    pygame.draw.line(screen, color, iPos, fPos, LINE_WIDTH)
-                return self.squares[row][0]
-
-        if self.squares[0][0] == self.squares[1][1] == self.squares[2][2] != 0:
-            if show:
-                color = CIRC_COLOR if self.squares[1][1] == 2 else CROSS_COLOR
-                iPos = (20, 20)
-                fPos = (WIDTH - 20, HEIGHT - 20)
-                pygame.draw.line(screen, color, iPos, fPos, CROSS_WIDTH)
-            return self.squares[1][1]
-
-        if self.squares[2][0] == self.squares[1][1] == self.squares[0][2] != 0:
-            if show:
-                color = CIRC_COLOR if self.squares[1][1] == 2 else CROSS_COLOR
-                iPos = (20, HEIGHT - 20)
-                fPos = (WIDTH - 20, 20)
-                pygame.draw.line(screen, color, iPos, fPos, CROSS_WIDTH)
-            return self.squares[1][1]
-
-        return 0
-
-    def mark_sqr(self, row, col, player):
-        self.squares[row][col] = player
-        self.marked_sqrs += 1
-
-    def empty_sqr(self, row, col):
-        return self.squares[row][col] == 0
-
-    def get_empty_sqrs(self):
-        empty_sqrs = []
-        for row in range(ROWS):
-            for col in range(COLS):
-                if self.empty_sqr(row, col):
-                    empty_sqrs.append( (row, col) )
-        
-        return empty_sqrs
-
-    def isfull(self):
-        return self.marked_sqrs == 9
-
-    def isempty(self):
-        return self.marked_sqrs == 0
-
-class AI:
-
-    def __init__(self, level=1, player=2):
-        self.level = level
-        self.player = player
+    # se a qtd de X for maior que Y, O joga. Senão é X inclusive X é o que inicia o jogo.
+    if qtdx > qtdo:
+        return O
+    else:
+        return X
 
 
-    def rnd(self, board):
-        empty_sqrs = board.get_empty_sqrs()
-        idx = random.randrange(0, len(empty_sqrs))
+def actions(board):
+    """
+    Returns set of all possible actions (i, j) available on the board.
+    """
+    possibilidades = set()
 
-        return empty_sqrs[idx] # (row, col)
+    # varrendo o array na busca de posições vazias
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == EMPTY:
+                possibilidades.add((i, j))
 
-
-    def minimax(self, board, maximizing):
-        
-        case = board.final_state()
-
-        if case == 1:
-            return 1, None # eval, move
-
-        if case == 2:
-            return -1, None
-
-        
-        elif board.isfull():
-            return 0, None
-
-        if maximizing:
-            max_eval = -100
-            best_move = None
-            empty_sqrs = board.get_empty_sqrs()
-
-            for (row, col) in empty_sqrs:
-                temp_board = copy.deepcopy(board)
-                temp_board.mark_sqr(row, col, 1)
-                eval = self.minimax(temp_board, False)[0]
-                if eval > max_eval:
-                    max_eval = eval
-                    best_move = (row, col)
-
-            return max_eval, best_move
-
-        elif not maximizing:
-            min_eval = 100
-            best_move = None
-            empty_sqrs = board.get_empty_sqrs()
-
-            for (row, col) in empty_sqrs:
-                temp_board = copy.deepcopy(board)
-                temp_board.mark_sqr(row, col, self.player)
-                eval = self.minimax(temp_board, True)[0]
-                if eval < min_eval:
-                    min_eval = eval
-                    best_move = (row, col)
-
-            return min_eval, best_move
+    return possibilidades
 
 
-    def eval(self, main_board):
-        if self.level == 0:
-          
-            eval = 'random'
-            move = self.rnd(main_board)
+def result(board, action):
+    """
+    Returns the board that results from making move (i, j) on the board.
+    """
+    resultado = copy.deepcopy(board)
+
+    try:
+        if resultado[action[0]][action[1]] != EMPTY:
+            raise IndexError
         else:
+            # atualizando o valor
+            resultado[action[0]][action[1]] = player(board)
+            return resultado
+    # tratando o erro
+    except IndexError:
+        print('Posição já preenchida')
 
-            eval, move = self.minimax(main_board, False)
+def winner(board):
+    """
+    Returns the winner of the game, if there is one.
+    """
+    for i in range(3):
+        # Buscando ganhador na linha
+        if board[i][0] == board[i][1] == board[i][2]:
+            if board[i][0] != EMPTY:
+                return board[i][0]
 
-        print(f'AI has chosen to mark the square in pos {move} with an eval of: {eval}')
+        # Buscando ganhador na coluna
+        if board[0][i] == board[1][i] == board[2][i]:
+            if board[0][i] != EMPTY:
+                return board[0][i]
 
-        return move # row, col
+    # Buscando ganhador nas diagonais
+    if board[0][0] == board[1][1] == board[2][2]:
+        if board[0][0] != EMPTY:
+            return board[0][0]
 
-class Game:
+    if board[2][0] == board[1][1] == board[0][2]:
+        if board[0][2] != EMPTY:
+            return board[0][2]
 
-    def __init__(self):
-        self.board = Board()
-        self.ai = AI()
-        self.player = 1   #1-cross  #2-circles
-        self.gamemode = 'ai' # pvp or ai
-        self.running = True
-        self.show_lines()
-
-
-    def show_lines(self):
-        # bg
-        screen.fill( BG_COLOR )
-
-        pygame.draw.line(screen, LINE_COLOR, (SQSIZE, 0), (SQSIZE, HEIGHT), LINE_WIDTH)
-        pygame.draw.line(screen, LINE_COLOR, (WIDTH - SQSIZE, 0), (WIDTH - SQSIZE, HEIGHT), LINE_WIDTH)
-
-        pygame.draw.line(screen, LINE_COLOR, (0, SQSIZE), (WIDTH, SQSIZE), LINE_WIDTH)
-        pygame.draw.line(screen, LINE_COLOR, (0, HEIGHT - SQSIZE), (WIDTH, HEIGHT - SQSIZE), LINE_WIDTH)
-
-    def draw_fig(self, row, col):
-        if self.player == 1:
-           
-            start_desc = (col * SQSIZE + OFFSET, row * SQSIZE + OFFSET)
-            end_desc = (col * SQSIZE + SQSIZE - OFFSET, row * SQSIZE + SQSIZE - OFFSET)
-            pygame.draw.line(screen, CROSS_COLOR, start_desc, end_desc, CROSS_WIDTH)
-         
-            start_asc = (col * SQSIZE + OFFSET, row * SQSIZE + SQSIZE - OFFSET)
-            end_asc = (col * SQSIZE + SQSIZE - OFFSET, row * SQSIZE + OFFSET)
-            pygame.draw.line(screen, CROSS_COLOR, start_asc, end_asc, CROSS_WIDTH)
-        
-        elif self.player == 2:
-          
-            center = (col * SQSIZE + SQSIZE // 2, row * SQSIZE + SQSIZE // 2)
-            pygame.draw.circle(screen, CIRC_COLOR, center, RADIUS, CIRC_WIDTH)
-
-   
-
-    def make_move(self, row, col):
-        self.board.mark_sqr(row, col, self.player)
-        self.draw_fig(row, col)
-        self.next_turn()
-
-    def next_turn(self):
-        self.player = self.player % 2 + 1
-
-    def change_gamemode(self):
-        self.gamemode = 'ai' if self.gamemode == 'pvp' else 'pvp'
-
-    def isover(self):
-        return self.board.final_state(show=True) != 0 or self.board.isfull()
-
-    def reset(self):
-        self.__init__()
-
-def main():
-
-   
-
-    game = Game()
-    board = game.board
-    ai = game.ai
-
- 
-
-    while True:
-        
-       
-        for event in pygame.event.get():
-
-            
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-
-           
-            if event.type == pygame.KEYDOWN:
-
-              
-                if event.key == pygame.K_g:
-                    game.change_gamemode()
-
-               
-                if event.key == pygame.K_r:
-                    game.reset()
-                    board = game.board
-                    ai = game.ai
-
-               
-                if event.key == pygame.K_0:
-                    ai.level = 0
-                
-              
-                if event.key == pygame.K_1:
-                    ai.level = 1
-
-           
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = event.pos
-                row = pos[1] // SQSIZE
-                col = pos[0] // SQSIZE
-                
-               
-                if board.empty_sqr(row, col) and game.running:
-                    game.make_move(row, col)
-
-                    if game.isover():
-                        game.running = False
+    # Não encontrou ganhador
+    return None
 
 
-       
-        if game.gamemode == 'ai' and game.player == ai.player and game.running:
+def terminal(board):
+    """
+    Returns True if game is over, False otherwise.
+    """
 
-          
-            pygame.display.update()
+    # verificando se há um ganhador
+    if winner(board) != None:
+        return True
+    else:
+        # varrendo o array na busca de posições vazias, se tiver jogo não terminou
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == EMPTY:
+                    return False
 
-          
-            row, col = ai.eval(board)
-            game.make_move(row, col)
+    # não tendo mais posições vazias nem ganhador jogo terminou
+    return True
 
-            if game.isover():
-                game.running = False
-            
-        pygame.display.update()
+def utility(board):
+    """
+    Returns 1 if X has won the game, -1 if O has won, 0 otherwise.
+    """
+    # Verificando se jogo terminou
+    if terminal(board):
+        # efetuando os retornos do ganhador
+        if winner(board) == X:
+            return 1
+        elif winner(board) == O:
+            return -1
+        else:
+            return 0
 
-main()
+
+def minimax(board):
+    """
+    Returns the optimal action for the current player on the board.
+    """
+    if terminal(board):
+        return None
+    else:
+        if player(board) == X:
+            v_minimo = float('-inf')
+            for possibilidades in actions(board):
+                i = valorMinimo(result(board, possibilidades))
+                if i > v_minimo:
+                    v_minimo = i
+                    movimento = possibilidades
+        else:
+            v_maximo = float('inf')
+            for possibilidades in actions(board):
+                i = valorMaximo(result(board, possibilidades))
+                if i < v_maximo:
+                    v_maximo = i
+                    movimento = possibilidades
+
+    return movimento
+
+
+def valorMinimo(board):
+    if terminal(board):
+        return utility(board)
+
+    v_minimo = float('inf')
+
+    # passando por todas as possibilidades e recuperando o menor valor
+    for possibilidades in actions(board):
+        v_minimo = min(v_minimo, valorMaximo(result(board, possibilidades)))
+
+    return v_minimo
+
+
+def valorMaximo(board):
+    if terminal(board):
+        return utility(board)
+
+    v_maximo = float('-inf')
+
+    # passando por todas as possibilidades e recuperando o maior valor
+    for possibilidades in actions(board):
+        v_maximo = max(v_maximo, valorMinimo(result(board, possibilidades)))
+
+    return v_maximo
