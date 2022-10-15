@@ -100,7 +100,7 @@ def terminal(board):
 
     return True
 
-def utility(board)
+def utility(board):
     if terminal(board):
       
         if winner(board) == X:
@@ -140,9 +140,9 @@ def valueMini(board):
 
     v_mini = float('inf')
 
-   for possibil in actions(board):
+    for possibil in actions(board):
         v_mini = min(v_mini, valueMaxi(result(board, possibil)))
-
+        
     return v_mini
 
 
